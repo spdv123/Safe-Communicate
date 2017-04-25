@@ -22,12 +22,18 @@ class Utils:
         """
         with open(who + '-private.pem') as f:
             key = f.read()
+            # 读取A的私钥
             rsa_key = RSA.importKey(key)
+            # 将私钥导入
             signer = Signature_pkcs1_v1_5.new(rsa_key)
+            # 采用PKCS1_v1_5库函数签名
             digest = SHA.new()
             digest.update(msg)
+            # 取消息的sha1值
             sign = signer.sign(digest)
+            # 对sha1值签名
             signature = base64.b64encode(sign)
+            # 签名结果做base64编码
         return signature
 
     @staticmethod
@@ -42,11 +48,16 @@ class Utils:
         try:
             with open(who + '-public.pem') as f:
                 key = f.read()
+                # 读取A的公钥
                 rsa_key = RSA.importKey(key)
+                # 将公钥导入
                 verifier = Signature_pkcs1_v1_5.new(rsa_key)
+                # 采用PKCS1_v1_5库函数签名验证
                 digest = SHA.new()
                 digest.update(msg)
+                # 取消息的sha1值
                 is_verify = verifier.verify(digest, base64.b64decode(signature))
+                # 验证签名结果的base64解码，结果为True或False
             return is_verify
         except Exception:
             return False
@@ -61,9 +72,13 @@ class Utils:
         """
         with open(who + '-public.pem') as f:
             key = f.read()
+            # 读取B的公钥
             rsa_key = RSA.importKey(key)
+            # 将公钥导入
             cipher = Cipher_pkcs1_v1_5.new(rsa_key)
+            # 采用PKCS1_v1_5库函数加密
             cipher_text = base64.b64encode(cipher.encrypt(msg))
+            # 加密结果base64编码
         return cipher_text
 
     @staticmethod
@@ -77,12 +92,17 @@ class Utils:
         try:
             with open(who + '-private.pem') as f:
                 key = f.read()
+                # 读取B的私钥
                 rsa_key = RSA.importKey(key)
+                # 将私钥导入
                 cipher = Cipher_pkcs1_v1_5.new(rsa_key)
+                # 采用PKCS1_v1_5库函数解密
                 plain_text = cipher.decrypt(base64.b64decode(cipher_text), Random.new().read)
+                # 解密base64解码后的密文
             return plain_text
         except Exception:
             print 'Warning: RSA decrypt error'
+            # 解密失败则输出警告并返回空
             return None
 
     @staticmethod
@@ -95,13 +115,18 @@ class Utils:
         """
         pad = 16 - len(msg) % 16
         msg += chr(pad) * pad
+        # padding
         if len(key) > 32:
             print 'Error: key too long'
             return None
         key += '\x00' * (32 - len(key))
+        # 如果key不足32位直接用\0补齐
         cipher = AES.new(key, AES.MODE_CBC, '\x00' * 16)
+        # AES_CBC模式，IV是16个\0
         cipher_text = cipher.encrypt(msg)
+        # 加密
         return base64.b64encode(cipher_text)
+        # 返回base64编码的加密结果
 
     @staticmethod
     def aes_decrypt(cipher_text, key):
@@ -113,13 +138,18 @@ class Utils:
         """
         try:
             cipher_text = base64.b64decode(cipher_text)
+            # base64解码密文
             if len(key) > 32:
                 print 'Error: key too long'
                 return None
             key += '\x00' * (32 - len(key))
+            # 如果key不足32位直接用\0补齐
             cipher = AES.new(key, AES.MODE_CBC, '\x00' * 16)
+            # AES_CBC模式，IV是16个\0
             text = cipher.decrypt(cipher_text)
+            # 解密
             return text[:-ord(text[-1])]
+            # 去除padding
         except Exception:
             print 'Warning: AES decrypt error'
             return None

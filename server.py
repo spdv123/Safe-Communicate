@@ -14,23 +14,32 @@ class MyProtocol(Protocol):
         # self.transport.write(s) send s to client
 
     def dataReceived(self, data):
+        # 当收到消息时触发此函数
         print 'Message from', self.transport.client, ':'
         data = data.strip()
-        cipher_msg, cipher_key, sign_msg = data.split(':::')
+        # 去除可能存在的多余空格和换行
         try:
+            cipher_msg, cipher_key, sign_msg = data.split(':::')
+            # 用规定的三个冒号分割开 AES加密后的消息，RSA加密后的key，消息签名
             key = Utils.rsa_decrypt(cipher_key, 'B')
+            # 先RSA解密得到AES加密用的key
             msg = Utils.aes_decrypt(cipher_msg, key)
+            # 再用key解密AES加密后的消息
             verify_result = Utils.verify_sign(msg, sign_msg, 'A')
+            # 验证解密得到的消息是否符合签名
         except Exception:
             # 解密失败
             self.transport.write('fail')
+            # 给客户端返回fail
             return
         print 'AES key:', key
         print 'Message:', msg
         print 'Verify:', verify_result
         if verify_result:
+            # 如果签名认证通过给客户端返回success
             self.transport.write('success')
         else:
+            # 否则返回fail
             self.transport.write('fail')
 
     def connectionLost(self, reason):
