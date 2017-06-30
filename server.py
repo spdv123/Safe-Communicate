@@ -33,6 +33,11 @@ class MyProtocol(Protocol):
             # 给客户端返回fail
             return
         print 'AES key:', key
+        try:
+            # 修正windows系统下可能存在的中文传输乱码
+            msg = msg.decode('gb2312').encode('utf8')
+        except UnicodeDecodeError:
+            pass
         print 'Message:', msg
         print 'Verify:', verify_result
         if verify_result:
